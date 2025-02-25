@@ -18,7 +18,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # 检查必要命令
-for cmd in apt systemctl sed grep netstat df mail; do
+for cmd in apt systemctl sed grep netstat df; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         echo "正在安装必要命令: $cmd"
         if ! apt install -y "$cmd"; then
@@ -43,7 +43,7 @@ fi
 
 # 安装基本工具
 echo "检查并安装基本安全工具..."
-TOOLS="fail2ban ufw iptables-persistent unattended-upgrades logwatch rkhunter lynis mailutils"
+TOOLS="fail2ban ufw iptables-persistent unattended-upgrades logwatch rkhunter lynis"
 for tool in $TOOLS; do
     if ! dpkg-query -W -f='${Status}' "$tool" 2>/dev/null | grep -q "install ok installed"; then
         echo "安装 $tool..."
@@ -160,17 +160,14 @@ APT::Periodic::Unattended-Upgrade "1";
 APT::Periodic::AutocleanInterval "7";
 APT::Periodic::Download-Upgradeable-Packages "1";
 EOF
+
 # 配置 50unattended-upgrades
 if [ -f /etc/apt/apt.conf.d/50unattended-upgrades ]; then
     # 删除已存在的相关配置
     sed -i '/^Unattended-Upgrade::Mail/d' /etc/apt/apt.conf.d/50unattended-upgrades
     sed -i '/^Unattended-Upgrade::MailOnlyOnError/d' /etc/apt/apt.conf.d/50unattended-upgrades
 fi
-# 添加新的配置
-cat > /etc/apt/apt.conf.d/50unattended-upgrades << EOF
-Unattended-Upgrade::Mail "root";
-Unattended-Upgrade::MailOnlyOnError "true";
-EOF
+
 echo "自动更新配置完成"
 
 # 设置系统资源限制
@@ -246,13 +243,8 @@ echo "" >> /root/security_report.txt
 
 echo "高 CPU 占用进程:" >> /root/security_report.txt
 ps aux --sort=-%cpu | head -n 10 >> /root/security_report.txt
-echo "" >> /root/security_report.txt
 
-if command -v mail >/dev/null 2>&1; then
-    mail -s "VPS Security Report" root < /root/security_report.txt
-else
-    echo "邮件程序未安装，报告保存在 /root/security_report.txt"
-fi
+echo "安全报告已保存到 /root/security_report.txt"
 EOF
     chmod +x /root/security_check.sh
     echo "安全检查脚本创建完成"
