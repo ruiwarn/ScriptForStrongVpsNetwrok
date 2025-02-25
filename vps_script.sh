@@ -262,29 +262,49 @@ fi
 
 # 增强网络安全参数
 echo "增强网络安全配置..."
-# 使用 sed 删除或更新每个配置项
+# 在添加新配置前，先删除可能存在的旧配置
+sed -i '/^net.ipv4.tcp_syncookies/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.conf.all.rp_filter/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.conf.default.rp_filter/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.conf.all.accept_redirects/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.conf.default.accept_redirects/d' /etc/sysctl.conf
+sed -i '/^net.ipv6.conf.all.accept_redirects/d' /etc/sysctl.conf
+sed -i '/^net.ipv6.conf.default.accept_redirects/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.conf.all.send_redirects/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.conf.default.send_redirects/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.icmp_echo_ignore_broadcasts/d' /etc/sysctl.conf
+sed -i '/^net.ipv4.tcp_rfc1337/d' /etc/sysctl.conf
+
+# 修改网络安全配置
+cat >> /etc/sysctl.conf << 'EOF'
+
+# 网络安全配置
 # 启用 TCP SYN cookies 防止 SYN 洪水攻击
-sed -i '/^net.ipv4.tcp_syncookies/c\net.ipv4.tcp_syncookies = 1' /etc/sysctl.conf
+net.ipv4.tcp_syncookies = 1
+
 # 启用源路由验证，防止 IP 欺骗
-sed -i '/^net.ipv4.conf.all.rp_filter/c\net.ipv4.conf.all.rp_filter = 1' /etc/sysctl.conf
-# 为新接口启用源路由验证
-sed -i '/^net.ipv4.conf.default.rp_filter/c\net.ipv4.conf.default.rp_filter = 1' /etc/sysctl.conf
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
 # 禁止接受 ICMP 重定向
-sed -i '/^net.ipv4.conf.all.accept_redirects/c\net.ipv4.conf.all.accept_redirects = 0' /etc/sysctl.conf
-# 为新接口禁止接受 ICMP 重定向
-sed -i '/^net.ipv4.conf.default.accept_redirects/c\net.ipv4.conf.default.accept_redirects = 0' /etc/sysctl.conf
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+
 # 禁止接受 IPv6 重定向
-sed -i '/^net.ipv6.conf.all.accept_redirects/c\net.ipv6.conf.all.accept_redirects = 0' /etc/sysctl.conf
-# 为新接口禁止接受 IPv6 重定向
-sed -i '/^net.ipv6.conf.default.accept_redirects/c\net.ipv6.conf.default.accept_redirects = 0' /etc/sysctl.conf
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
 # 禁止发送 ICMP 重定向
-sed -i '/^net.ipv4.conf.all.send_redirects/c\net.ipv4.conf.all.send_redirects = 0' /etc/sysctl.conf
-# 为新接口禁止发送 ICMP 重定向
-sed -i '/^net.ipv4.conf.default.send_redirects/c\net.ipv4.conf.default.send_redirects = 0' /etc/sysctl.conf
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
 # 忽略广播 ping 请求
-sed -i '/^net.ipv4.icmp_echo_ignore_broadcasts/c\net.ipv4.icmp_echo_ignore_broadcasts = 1' /etc/sysctl.conf
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
 # 启用 RFC 1337 保护
-sed -i '/^net.ipv4.tcp_rfc1337/c\net.ipv4.tcp_rfc1337 = 1' /etc/sysctl.conf
+net.ipv4.tcp_rfc1337 = 1
+EOF
+
 if sysctl -p; then
     echo "网络安全配置完成"
 else
