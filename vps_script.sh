@@ -102,7 +102,8 @@ echo "UFW 配置完成"
 
 # 禁止 ping (通过 sysctl)
 echo "禁止 PING 响应..."
-sed -i '/net.ipv4.icmp_echo_ignore_all/c\net.ipv4.icmp_echo_ignore_all = 1' /etc/sysctl.conf
+sed -i '/^net.ipv4.icmp_echo_ignore_all/d' /etc/sysctl.conf
+echo "net.ipv4.icmp_echo_ignore_all = 1" >> /etc/sysctl.conf
 if sysctl -p; then
     echo "PING 响应已禁用"
 else
@@ -127,10 +128,20 @@ else
     fi
     
     # 使用 sed 替换或添加配置，确保每个配置只有一行
-    sed -i '/^#\?PermitRootLogin/c\PermitRootLogin without-password' "$SSH_CONFIG"
-    sed -i '/^#\?X11Forwarding/c\X11Forwarding no' "$SSH_CONFIG"
-    sed -i '/^#\?Protocol/c\Protocol 2' "$SSH_CONFIG"
-    sed -i '/^#\?MaxAuthTries/c\MaxAuthTries 3' "$SSH_CONFIG"
+    sed -i '/^#\?PasswordAuthentication/d' "$SSH_CONFIG"
+    echo "PasswordAuthentication no" >> "$SSH_CONFIG"
+
+    sed -i '/^#\?PermitRootLogin/d' "$SSH_CONFIG"
+    echo "PermitRootLogin without-password" >> "$SSH_CONFIG"
+
+    sed -i '/^#\?X11Forwarding/d' "$SSH_CONFIG"
+    echo "X11Forwarding no" >> "$SSH_CONFIG"
+
+    sed -i '/^#\?Protocol/d' "$SSH_CONFIG"
+    echo "Protocol 2" >> "$SSH_CONFIG"
+
+    sed -i '/^#\?MaxAuthTries/d' "$SSH_CONFIG"
+    echo "MaxAuthTries 3" >> "$SSH_CONFIG"
     
     # 对于 AllowUsers，先删除再添加
     sed -i '/^AllowUsers/d' "$SSH_CONFIG"
@@ -160,14 +171,6 @@ APT::Periodic::Unattended-Upgrade "1";
 APT::Periodic::AutocleanInterval "7";
 APT::Periodic::Download-Upgradeable-Packages "1";
 EOF
-
-# 配置 50unattended-upgrades
-if [ -f /etc/apt/apt.conf.d/50unattended-upgrades ]; then
-    # 删除已存在的相关配置
-    sed -i '/^Unattended-Upgrade::Mail/d' /etc/apt/apt.conf.d/50unattended-upgrades
-    sed -i '/^Unattended-Upgrade::MailOnlyOnError/d' /etc/apt/apt.conf.d/50unattended-upgrades
-fi
-
 echo "自动更新配置完成"
 
 # 设置系统资源限制
